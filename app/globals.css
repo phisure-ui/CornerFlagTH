@@ -1,0 +1,32 @@
+/* Tailwind v4 */
+@import "tailwindcss";
+
+:root {
+  --brand-orange: #ff6b00;
+  --brand-black: #0a0a0a;
+  --brand-white: #ffffff;
+}
+html, body {
+  background: #f6f7f9;
+  color: var(--brand-black);
+}
+
+/* --- Skip link (always pop over header when focused) --- */
+.skip-link {
+  position: fixed;           /* ให้ลอยเหนือทุกอย่าง */
+  top: -100px;               /* ซ่อนขึ้นไปด้านบน */
+  left: 1rem;
+  padding: .5rem .75rem;
+  background: #000;
+  color: #fff;
+  border-radius: .5rem;
+  box-shadow: 0 2px 14px rgba(0,0,0,.18);
+  z-index: 9999;             /* สูงกว่า header (z-50) มาก ๆ */
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 1rem;                 /* เลื่อนลงมาให้เห็นชัด */
+  outline: 2px solid #fff;   /* เผื่อธีมลบ outline */
+}
+
+

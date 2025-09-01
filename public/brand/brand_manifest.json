@@ -1,0 +1,21 @@
+{
+  "name": "CornerFlagTH",
+  "version": "v2",
+  "colors": {
+    "primary_orange": "#FF6B00",
+    "black": "#0A0A0A",
+    "white": "#FFFFFF"
+  },
+  "assets": {
+    "logo_on_white_svg": "/mnt/data/brand_cornerflagth_v2/cornerflagth_logo_on_white.svg",
+    "logo_on_black_svg": "/mnt/data/brand_cornerflagth_v2/cornerflagth_logo_on_black.svg",
+    "icon_on_white_svg": "/mnt/data/brand_cornerflagth_v2/cornerflagth_icon_on_white.svg",
+    "icon_on_black_svg": "/mnt/data/brand_cornerflagth_v2/cornerflagth_icon_on_black.svg",
+    "icon_png_512": "/mnt/data/brand_cornerflagth_v2/cornerflagth_icon_512.png",
+    "icon_png_180": "/mnt/data/brand_cornerflagth_v2/cornerflagth_icon_180.png",
+    "icon_png_48": "/mnt/data/brand_cornerflagth_v2/cornerflagth_icon_48.png",
+    "icon_png_32": "/mnt/data/brand_cornerflagth_v2/cornerflagth_icon_32.png",
+    "icon_png_16": "/mnt/data/brand_cornerflagth_v2/cornerflagth_icon_16.png",
+    "favicon_ico": "/mnt/data/brand_cornerflagth_v2/cornerflagth_favicon.ico"
+  }
+}
