@@ -2,23 +2,53 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import LeagueNav from '@/components/LeagueNav';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
-  title: 'CornerFlagTH',
-  description: 'ข่าว+สกอร์ฟุตบอลยุโรปแบบกระชับ',
+  metadataBase: new URL('https://cornerflagth.com'),
+  title: { default: 'CornerFlagTH', template: '%s | CornerFlagTH' },
+  description: 'ข่าว สกอร์ และเรื่องราวฟุตบอลยุโรปแบบกระชับ',
+  openGraph: { type: 'website', title: 'CornerFlagTH', description: 'ข่าว สกอร์ และเรื่องราวฟุตบอลยุโรปแบบกระชับ', images: ['/og-default.jpg'] },
+  twitter: { card: 'summary_large_image', title: 'CornerFlagTH', description: 'ข่าว สกอร์ และเรื่องราวฟุตบอลยุโรปแบบกระชับ', images: ['/og-default.jpg'] },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="th">
-      <body className="min-h-screen bg-gray-50 text-[#111] antialiased">
-        {/* แถบเมนูลีกแบบ sticky */}
-        <LeagueNav />
+  const themeScript = `
+    (function() {
+      try {
+        var saved = localStorage.getItem('theme'); // 'dark' | 'light'
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var initial = saved ? saved : (prefersDark ? 'dark' : 'light');
+        if (initial === 'dark') document.documentElement.classList.add('dark');
+        document.documentElement.style.colorScheme = initial;
+      } catch (e) {}
+    })();
+  `;
 
-        {/* พื้นที่คอนเทนต์หลัก */}
-        <main className="container mx-auto p-4">
-          {children}
-        </main>
+  return (
+    <html lang="th" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            try{
+              var saved = localStorage.getItem('theme');
+              var prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
+              var initial = saved ? saved : (prefers ? 'dark' : 'light');
+              var isDark = initial === 'dark';
+              document.documentElement.classList.toggle('dark', isDark);
+              document.body && document.body.classList.toggle('dark', isDark); // เผื่อ body เร็วกว่า hydrate
+              document.documentElement.style.colorScheme = initial;
+            }catch(e){}
+          })();`
+        }} />
+      </head>
+      <body className="min-h-screen bg-gray-50 text-[#111] antialiased
+                       dark:bg-gray-950 dark:text-gray-100 transition-colors">
+        <LeagueNav />
+        <div className="container mx-auto px-4 pt-4 flex justify-end">
+          <ThemeToggle />
+        </div>
+        <main className="container mx-auto p-4">{children}</main>
       </body>
     </html>
   );
