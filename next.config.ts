@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'picsum.photos' },
-      // ใส่เพิ่มได้ถ้าคุณจะใช้เว็บรูปอื่นในอนาคต
+      // เพิ่มโดเมนอื่นภายหลังได้ เช่น:
       // { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
