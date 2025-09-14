@@ -1,22 +1,27 @@
 // app/loading.tsx
-import HeroSkeleton from '@/components/skeletons/HeroSkeleton';
-import { ArticleGridSkeleton } from '@/components/skeletons/ArticleCardSkeleton';
-import VideoRowSkeleton from '@/components/skeletons/VideoRowSkeleton';
+import ArticleCardSkeleton from '@/components/skeletons/ArticleCardSkeleton';
+import ScoreTileSkeleton from '@/components/skeletons/ScoreTileSkeleton';
 
 export default function Loading() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      <HeroSkeleton />
+    <div className="space-y-10">
+      <section>
+        <div className="relative aspect-[16/9] w-full animate-pulse rounded-2xl bg-gray-200" />
+      </section>
 
-      <div className="mt-8">
-        <div className="mb-3 h-6 w-40 rounded bg-neutral-200 animate-pulse" />
-        <ArticleGridSkeleton count={8} />
-      </div>
+      <section>
+        <div className="mb-4 h-6 w-24 animate-pulse rounded bg-gray-200" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => <ArticleCardSkeleton key={i} />)}
+        </div>
+      </section>
 
-      <div className="mt-10">
-        <div className="mb-3 h-6 w-44 rounded bg-neutral-200 animate-pulse" />
-        <VideoRowSkeleton />
-      </div>
+      <section>
+        <div className="mb-4 h-6 w-24 animate-pulse rounded bg-gray-200" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => <ScoreTileSkeleton key={i} />)}
+        </div>
+      </section>
     </div>
   );
 }

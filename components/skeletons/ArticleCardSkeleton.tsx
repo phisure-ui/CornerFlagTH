@@ -1,25 +1,13 @@
-import Skeleton from '../ui/Skeleton';   // ต้องสะกดตรงตัวพิมพ์ใหญ่เล็ก
-
-export function ArticleCardSkeleton() {
+// components/skeletons/ArticleCardSkeleton.tsx
+export default function ArticleCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border bg-white">
-      <Skeleton className="aspect-[16/10] w-full" />
-      <div className="space-y-2 p-4">
-        <Skeleton className="h-5 w-24 rounded-full" />
-        <Skeleton className="h-6 w-11/12" />
-        <Skeleton className="h-6 w-8/12" />
-        <Skeleton className="h-4 w-32" />
+    <div className="overflow-hidden rounded-2xl border">
+      <div className="relative aspect-[16/9] animate-pulse bg-gray-200" />
+      <div className="space-y-3 p-4">
+        <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+        <div className="h-6 w-3/4 animate-pulse rounded bg-gray-200" />
+        <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200" />
       </div>
-    </div>
-  );
-}
-
-export function ArticleGridSkeleton({ count = 8 }: { count?: number }) {
-  return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: count }).map((_, i) => (
-        <ArticleCardSkeleton key={i} />
-      ))}
     </div>
   );
 }

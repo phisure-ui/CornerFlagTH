@@ -1,9 +1,13 @@
 // tailwind.config.ts
 import type { Config } from 'tailwindcss';
-import lineClamp from '@tailwindcss/line-clamp';
 
-const config: Config = {
-  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}', './lib/**/*.{ts,tsx}'],
+export default {
+  darkMode: 'class',
+  content: [
+    './app/**/*.{ts,tsx,mdx}',
+    './components/**/*.{ts,tsx}',
+    './lib/**/*.{ts,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
@@ -15,7 +19,5 @@ const config: Config = {
       },
     },
   },
-  plugins: [lineClamp],
-};
-
-export default config;
+  plugins: [require('@tailwindcss/line-clamp')],
+} satisfies Config;
