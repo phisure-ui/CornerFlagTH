@@ -1,4 +1,3 @@
-// components/ArticleCard.tsx
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Article } from '@/lib/types';
@@ -12,10 +11,7 @@ export default function ArticleCard({ article }: { article: Article }) {
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="group overflow-hidden rounded-2xl border bg-white transition
-                 hover:shadow-sm
-                 border-gray-200 dark:border-gray-800
-                 dark:bg-gray-900"
+      className="group card overflow-hidden transition hover:shadow-sm"
     >
       {article.heroImage && (
         <div className="relative aspect-[16/9]">
@@ -31,12 +27,7 @@ export default function ArticleCard({ article }: { article: Article }) {
 
       <div className="p-4">
         <div className="mb-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          {article.league && (
-            <span className="rounded-full border px-2 py-0.5
-                             border-gray-300 dark:border-gray-700">
-              {article.league}
-            </span>
-          )}
+          {article.league && <span className="chip chip-xs">{article.league}</span>}
           <time dateTime={article.publishedAt}>{published}</time>
         </div>
 

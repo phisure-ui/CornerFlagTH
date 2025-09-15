@@ -1,32 +1,76 @@
-/* Tailwind v4 */
+/* ==== Tailwind v4 entry ==== */
 @import "tailwindcss";
 
+/* ===== CSS Variables (แบรนด์) ===== */
 :root {
   --brand-orange: #ff6b00;
   --brand-black: #0a0a0a;
   --brand-white: #ffffff;
 }
-html, body {
-  background: #f6f7f9;
-  color: var(--brand-black);
+
+/* ===== Base + Dark mode ===== */
+@layer base {
+  :root { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+
+  /* โทนสว่าง (เริ่มต้น) */
+  body {
+    @apply min-h-screen bg-gray-50 text-[#111] antialiased;
+    /* fallback */
+    background: #f6f7f9;
+    color: var(--brand-black);
+  }
+
+  /* โทนมืด */
+  html.dark body {
+    @apply bg-gray-950 text-gray-100;
+    /* fallback */
+    background: #0b0b0f;
+    color: #e5e7eb;
+  }
 }
 
-/* --- Skip link (always pop over header when focused) --- */
+/* ===== Skip link ===== */
 .skip-link {
-  position: fixed;           /* ให้ลอยเหนือทุกอย่าง */
-  top: -100px;               /* ซ่อนขึ้นไปด้านบน */
-  left: 1rem;
-  padding: .5rem .75rem;
-  background: #000;
-  color: #fff;
-  border-radius: .5rem;
-  box-shadow: 0 2px 14px rgba(0,0,0,.18);
-  z-index: 9999;             /* สูงกว่า header (z-50) มาก ๆ */
+  position: fixed; top: -100px; left: 1rem;
+  padding: .5rem .75rem; background: #000; color: #fff;
+  border-radius: .5rem; box-shadow: 0 2px 14px rgba(0,0,0,.18);
+  z-index: 9999;
 }
-.skip-link:focus,
-.skip-link:focus-visible {
-  top: 1rem;                 /* เลื่อนลงมาให้เห็นชัด */
-  outline: 2px solid #fff;   /* เผื่อธีมลบ outline */
+.skip-link:focus, .skip-link:focus-visible {
+  top: 1rem; outline: 2px solid #fff;
 }
+html.dark .skip-link { background: #111; color: #fff; }
 
+/* ==== UI primitives: card / chip / button ==== */
+@layer components {
+  .card {
+    @apply rounded-2xl border bg-white border-gray-200
+           dark:bg-gray-900 dark:border-gray-800;
+  }
 
+  .chip {
+    @apply inline-flex items-center rounded-full border px-3 py-1 text-sm
+           border-gray-300 text-gray-700 hover:bg-gray-100
+           dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800;
+  }
+
+  .chip-xs { @apply px-2 py-0.5 text-xs; }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-full px-4 py-2 border
+           transition hover:shadow-sm disabled:opacity-50;
+  }
+  .btn-outline {
+    @apply border-gray-300 text-gray-900
+           dark:border-gray-700 dark:text-gray-100;
+  }
+  .btn-primary {
+    @apply border-transparent bg-primary text-white hover:brightness-110;
+  }
+
+  .chip-active {
+    @apply border-transparent bg-gray-900 text-white
+           dark:bg-gray-100 dark:text-gray-900;
+  }
+}
