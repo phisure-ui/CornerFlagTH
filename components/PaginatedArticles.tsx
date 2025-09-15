@@ -88,11 +88,7 @@ export default function PaginatedArticles({
 
       {hasMore && (
         <div className="flex justify-center">
-          <button
-            onClick={loadMore}
-            disabled={loading}
-            className="rounded-full border px-4 py-2 hover:shadow-sm disabled:opacity-50"
-          >
+          <button onClick={loadMore} disabled={loading} className="btn btn-outline">
             {loading ? 'กำลังโหลด…' : 'โหลดเพิ่ม'}
           </button>
         </div>

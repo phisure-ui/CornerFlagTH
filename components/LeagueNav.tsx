@@ -1,31 +1,35 @@
 'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-
-const leagues = [
-{ name: 'Premier League', slug: 'premier-league' },
-{ name: 'LaLiga', slug: 'laliga' },
-{ name: 'Bundesliga', slug: 'bundesliga' },
-{ name: 'Serie A', slug: 'serie-a' },
-{ name: 'UCL', slug: 'ucl' },
+const LINKS = [
+  { slug: 'premier-league', label: 'Premier League' },
+  { slug: 'laliga',          label: 'LaLiga' },
+  { slug: 'bundesliga',      label: 'Bundesliga' },
+  { slug: 'serie-a',         label: 'Serie A' },
+  { slug: 'ucl',             label: 'UCL' },
 ];
 
-
 export default function LeagueNav() {
-return (
-<nav className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
-<ul className="container mx-auto flex gap-3 overflow-x-auto p-3">
-{leagues.map((l) => (
-<li key={l.slug}>
-<Link
-className="px-3 py-1 rounded-full border hover:shadow transition will-change-transform hover:-translate-y-0.5"
-href={`/leagues/${l.slug}`}
->
-{l.name}
-</Link>
-</li>
-))}
-</ul>
-</nav>
-);
+  const pathname = usePathname();
+  const isActive = (slug: string) =>
+    pathname === `/leagues/${slug}` || pathname?.startsWith(`/leagues/${slug}`);
+
+  return (
+    <nav className="border-b border-gray-200 dark:border-gray-800">
+      <div className="container mx-auto flex flex-wrap gap-2 p-4">
+        {LINKS.map((l) => (
+          <Link
+            key={l.slug}
+            href={`/leagues/${l.slug}`}
+            className={`chip ${isActive(l.slug) ? 'chip-active' : ''}`}
+            aria-current={isActive(l.slug) ? 'page' : undefined}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
 }

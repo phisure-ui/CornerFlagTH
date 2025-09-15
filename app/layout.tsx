@@ -3,6 +3,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import LeagueNav from '@/components/LeagueNav';
 import ThemeToggle from '@/components/ThemeToggle';
+import ThemeStatus from '@/components/ThemeStatus';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://cornerflagth.com'),
@@ -28,19 +29,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="th" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function(){
-            try{
-              var saved = localStorage.getItem('theme');
-              var prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
-              var initial = saved ? saved : (prefers ? 'dark' : 'light');
-              var isDark = initial === 'dark';
-              document.documentElement.classList.toggle('dark', isDark);
-              document.body && document.body.classList.toggle('dark', isDark); // เผื่อ body เร็วกว่า hydrate
-              document.documentElement.style.colorScheme = initial;
-            }catch(e){}
-          })();`
-        }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+            (function(){
+              try{
+                var saved = localStorage.getItem('theme');       // 'dark' | 'light'
+                var prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var initial = saved ? saved : (prefers ? 'dark' : 'light');
+                var isDark = initial === 'dark';
+                if (isDark) {
+                  document.documentElement.classList.add('dark');
+                  if (document.body) document.body.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                  if (document.body) document.body.classList.remove('dark');
+                }
+                document.documentElement.style.colorScheme = initial;
+              }catch(e){}
+            })();
+          `,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-gray-50 text-[#111] antialiased
                        dark:bg-gray-950 dark:text-gray-100 transition-colors">
@@ -48,6 +58,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="container mx-auto px-4 pt-4 flex justify-end">
           <ThemeToggle />
         </div>
+
+        <ThemeStatus />   {/* DEBUG: เอาออกได้หลังทดสอบ */}
+        
         <main className="container mx-auto p-4">{children}</main>
       </body>
     </html>
