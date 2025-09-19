@@ -1,42 +1,48 @@
 // app/page.tsx
+import HeroArticle from '@/components/HeroArticle';
+import ArticleList from '@/components/ArticleList';
+import ScoreTile from '@/components/ScoreTile';
 import { getArticles } from '@/lib/adapters/articles';
 import { getMatches } from '@/lib/adapters/matches';
-import HeroArticle from '@/components/HeroArticle';
-import PaginatedArticles from '@/components/PaginatedArticles';
-import ScoreTile from '@/components/ScoreTile';
 
-export const revalidate = 300;
+export default async function Page() {
+  const articles = await getArticles({ limit: 7 });
+  const [hero, ...rest] = articles;
 
-export default async function HomePage() {
-  const [allArticles, scores] = await Promise.all([
-    getArticles({ limit: 12 }),
-    getMatches({ limit: 6 }),
-  ]);
-
-  const [hero, ...rest] = allArticles;
-  const initial = rest.slice(0, 9); // หน้าแรกแสดง 9 ชิ้น
+  const matches = await getMatches();
+  const leagues = ['premier-league', 'laliga', 'bundesliga', 'serie-a', 'ucl'] as const;
 
   return (
-    <div className="space-y-10">
-      {hero && (
+    <>
+      {/* === HERO: ปล่อยเต็มความกว้างของหน้า === */}
+      {hero ? (
         <section>
           <HeroArticle article={hero} />
         </section>
-      )}
+      ) : null}
 
-      <section>
-        <h2 className="mb-4 text-2xl font-bold">Latest</h2>
-        <PaginatedArticles initial={initial} pageSize={2} initialOffset={initial.length + 1} />
-      </section>
+      {/* === ส่วนเนื้อหาหลัก: คุมความกว้างด้วยคอนเทนเนอร์ === */}
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Latest */}
+        <section className="mt-8">
+          <h2 className="text-2xl font-extrabold mb-4">Latest</h2>
+          <ArticleList articles={rest} />
+        </section>
 
-      <section>
-        <h2 className="mb-4 text-2xl font-bold">Scores</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {scores.map((m) => (
-            <ScoreTile key={m.id} match={m} />
-          ))}
-        </div>
-      </section>
-    </div>
+        {/* Scores */}
+        <section className="mt-12">
+          <h2 className="text-2xl font-extrabold mb-4">Scores</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {leagues.map((lg) => (
+              <ScoreTile
+                key={lg}
+                league={lg}
+                matches={matches.filter((m) => m.league === lg)}
+              />
+            ))}
+          </div>
+        </section>
+      </div>
+    </>
   );
 }

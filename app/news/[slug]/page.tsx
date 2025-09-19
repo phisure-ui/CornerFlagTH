@@ -1,164 +1,199 @@
 // app/news/[slug]/page.tsx
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
-import Image from 'next/image';
-import Link from 'next/link';
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { headers } from "next/headers";
+import ShareBar from "@/components/ShareBar";
+import JsonLd from "@/components/JsonLd";
 
-import { getArticle, getArticles, getRelatedArticles } from '@/lib/adapters/articles';
-import type { LeagueSlug, Article } from '@/lib/types';
-import ShareBar from '@/components/ShareBar';
-import Breadcrumbs from '@/components/Breadcrumbs';
-
-export const revalidate = 300;
-
-// แปลง slug ลีก -> ชื่อที่อ่านง่าย
-const LEAGUE_NAME: Record<LeagueSlug, string> = {
-  'premier-league': 'Premier League',
-  laliga: 'LaLiga',
-  bundesliga: 'Bundesliga',
-  'serie-a': 'Serie A',
-  ucl: 'UEFA Champions League',
+/* ---------- Types ---------- */
+type Article = {
+  slug: string;
+  title: string;
+  excerpt: string;
+  content?: string;
+  league?: string;
+  publishedAt: string; // ISO
+  updatedAt?: string;
+  heroImage?: string;
 };
 
-// สร้างเส้นทางล่วงหน้าจาก mock ป้องกันพลาด 404
-export async function generateStaticParams() {
-  const list = await getArticles({ limit: 100 });
-  return list.map((a) => ({ slug: a.slug }));
+/* ---------- Helpers ---------- */
+function getOrigin() {
+  const h = headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto =
+    h.get("x-forwarded-proto") ?? (host?.includes("localhost") ? "http" : "https");
+  return host ? `${proto}://${host}` : "https://cornerflagth.com";
 }
 
+function prettyFromSlug(slug: string) {
+  return slug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+async function getArticle(slug: string): Promise<Article | null> {
+  const origin = getOrigin();
+  try {
+    const res = await fetch(`${origin}/api/articles`, { next: { revalidate: 60 } });
+    const data = await res.json();
+    const list = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+    const raw = list.find((a: any) => a.slug === slug);
+    if (!raw) return null;
+
+    return {
+      slug: raw.slug,
+      title: raw.title,
+      excerpt: raw.excerpt ?? "",
+      content: raw.content ?? "",
+      league: raw.league,
+      publishedAt: raw.publishedAt ?? raw.date ?? new Date().toISOString(),
+      updatedAt: raw.updatedAt,
+      heroImage: raw.heroImage ?? raw.image,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/* ---------- Metadata ---------- */
 export async function generateMetadata(
   { params }: { params: { slug: string } }
 ): Promise<Metadata> {
+  const origin = getOrigin();
   const article = await getArticle(params.slug);
-  if (!article) return { title: 'ไม่พบข่าว | CornerFlagTH' };
 
-  // ปรับโดเมนเมื่อขึ้นโปรดักชันจริง
-  const url = `https://cornerflagth.com/news/${article.slug}`;
-  const og = article.heroImage ?? '/og-default.jpg'; // Fallback OG
+  const title = article
+    ? `${article.title} | CornerFlagTH`
+    : `${prettyFromSlug(params.slug)} | CornerFlagTH`;
+
+  const description =
+    article?.excerpt ?? "ข่าวบอล รายงานผล และบทความวิเคราะห์จาก CornerFlagTH";
+
+  const pageUrl = `${origin}/news/${params.slug}`;
+  const ogImg = article?.heroImage
+    ? article.heroImage.startsWith("http")
+      ? article.heroImage
+      : `${origin}${article.heroImage}`
+    : `${origin}/og-default.jpg`;
 
   return {
-    title: `${article.title} | CornerFlagTH`,
-    description: article.excerpt,
-    alternates: { canonical: url },
+    title,
+    description,
+    alternates: { canonical: pageUrl },
     openGraph: {
-      type: 'article',
-      url,
-      title: article.title,
-      description: article.excerpt,
-      images: [og],
+      type: "article",
+      url: pageUrl,
+      siteName: "CornerFlagTH",
+      locale: "th_TH",
+      title,
+      description,
+      images: [
+        { url: ogImg, width: 1200, height: 630, alt: article?.title ?? "CornerFlagTH" },
+      ],
     },
     twitter: {
-      card: 'summary_large_image',
-      title: article.title,
-      description: article.excerpt,
-      images: [og],
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImg],
     },
   };
 }
 
-export default async function NewsArticlePage(
-  { params }: { params: { slug: string } }
-) {
+/* ---------- Page ---------- */
+export default async function ArticlePage({
+  params,
+}: { params: { slug: string } }) {
+  const origin = getOrigin();
   const article = await getArticle(params.slug);
-  if (!article) notFound();
 
-  const related = await getRelatedArticles(article, 3);
+  if (!article) {
+    return (
+      <main className="container mx-auto px-4 py-10">
+        <h1 className="text-2xl font-bold">ไม่พบบทความ</h1>
+        <p className="mt-4">
+          <Link href="/news" className="underline text-blue-600">ดูข่าวทั้งหมด</Link>
+        </p>
+      </main>
+    );
+  }
 
-  const publishedText = new Date(article.publishedAt).toLocaleString('th-TH', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  const imgSrc = article.heroImage
+    ? article.heroImage.startsWith("http")
+      ? article.heroImage
+      : `${origin}${article.heroImage}`
+    : `${origin}/og-default.jpg`;
 
-  // JSON-LD (Article)
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'NewsArticle',
+  const canonical = `${origin}/news/${article.slug}`;
+
+  /* ----- JSON-LD objects ----- */
+  const jsonLdArticle = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
     headline: article.title,
+    description: article.excerpt,
     datePublished: article.publishedAt,
-    author: article.author ? { '@type': 'Person', name: article.author } : undefined,
-    image: article.heroImage ? [article.heroImage] : undefined,
+    dateModified: article.updatedAt ?? article.publishedAt,
+    mainEntityOfPage: canonical,
+    image: [imgSrc],
+    author: [{ "@type": "Organization", name: "CornerFlagTH" }],
+    publisher: {
+      "@type": "Organization",
+      name: "CornerFlagTH",
+      logo: { "@type": "ImageObject", url: `${origin}/logo-512.png`, width: 512, height: 512 },
+    },
+  };
+
+  const jsonLdBreadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${origin}/` },
+      { "@type": "ListItem", position: 2, name: "News", item: `${origin}/news` },
+      { "@type": "ListItem", position: 3, name: article.title, item: canonical },
+    ],
   };
 
   return (
-    <article className="mx-auto max-w-3xl space-y-6">
-      <header className="space-y-3">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            ...(article.league
-              ? [
-                  { label: 'Leagues', href: '/leagues' },
-                  { label: LEAGUE_NAME[article.league], href: `/leagues/${article.league}` },
-                ]
-              : []),
-            { label: article.title },
-          ]}
-        />
+    <main className="pb-10">
+      {/* Breadcrumb */}
+      <nav className="container mx-auto px-4 pt-6 text-sm text-gray-500">
+        <ol className="flex items-center gap-2">
+          <li><Link href="/" className="hover:underline">Home</Link></li>
+          <li>/</li>
+          <li><Link href="/news" className="hover:underline">News</Link></li>
+          <li>/</li>
+          <li className="font-medium text-gray-700 dark:text-gray-200">{article.title}</li>
+        </ol>
+      </nav>
 
-        <h1 className="text-3xl font-extrabold leading-tight">{article.title}</h1>
-
-        <div className="text-sm text-gray-600 flex flex-wrap items-center gap-2">
-          {article.author && <span>{article.author}</span>}
-          <time dateTime={article.publishedAt}>{publishedText}</time>
-          {article.tags?.length ? (
-            <span className="inline-flex gap-2">
-              • {article.tags.map((t) => (
-                <span key={t} className="px-2 py-0.5 rounded-full border text-xs">{t}</span>
-              ))}
-            </span>
-          ) : null}
-        </div>
-      </header>
-
-      {article.heroImage && (
-        <div className="relative aspect-[16/9] rounded-2xl overflow-hidden border">
-          <Image
-            src={article.heroImage}
-            alt={article.title}
-            fill
-            sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
-            priority
-          />
-        </div>
-      )}
-
-      {/* เนื้อหา: ตอนนี้ใช้ excerpt/placeholder; ภายหลังสลับเป็น MDX/CMS ได้ */}
-      <div className="leading-relaxed text-[15px] text-gray-800 space-y-4">
-        {article.excerpt ? <p>{article.excerpt}</p> : <p>— ตัวอย่างเนื้อหาบทความ (รอเชื่อมต่อ CMS/MDX) —</p>}
-        <p>
-          หน้า “ข่าวเดี่ยว” นี้ใช้ adapter จาก <code>/lib/adapters/articles.ts</code>.
-          เมื่อเชื่อมต่อ CMS/API แล้ว เปลี่ยนเฉพาะ adapter ก็เพียงพอ UI ไม่ต้องแก้ไข
-        </p>
-      </div>
-
-      {/* ปุ่มแชร์/คัดลอกลิงก์ */}
-      <ShareBar title={article.title} />
-
-      {/* Related — ใช้ตัวเลือกที่ถ่วงน้ำหนักด้วยแท็ก > ลีก > เวลา */}
-      {related.length > 0 && (
-        <section className="border-t pt-6">
-          <h2 className="text-xl font-bold mb-4">Related</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {related.map((a: Article) => (
-              <Link key={a.id} href={`/news/${a.slug}`} className="rounded-xl border overflow-hidden hover:shadow-sm">
-                {a.heroImage && (
-                  <div className="relative aspect-[16/9]">
-                    <Image src={a.heroImage} alt={a.title} fill className="object-cover" />
-                  </div>
-                )}
-                <div className="p-3 text-sm font-semibold line-clamp-2">{a.title}</div>
-              </Link>
-            ))}
+      <article className="container mx-auto px-4 py-4">
+        <header className="mb-4">
+          <h1 className="text-3xl font-extrabold tracking-tight">{article.title}</h1>
+          <div className="mt-2 text-sm text-gray-500">
+            {new Date(article.publishedAt).toLocaleString("th-TH", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
           </div>
-        </section>
-      )}
+        </header>
 
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-    </article>
+        <figure className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl">
+          <Image src={imgSrc} alt={article.title} fill sizes="100vw" className="object-cover" priority />
+        </figure>
+
+        <div className="prose lg:prose-lg dark:prose-invert mt-8">
+          <p>{article.excerpt}</p>
+        </div>
+
+        <div className="mt-6">
+          <ShareBar url={canonical} title={article.title} />
+        </div>
+      </article>
+
+      {/* JSON-LD scripts */}
+      <JsonLd data={jsonLdArticle} />
+      <JsonLd data={jsonLdBreadcrumb} />
+    </main>
   );
 }

@@ -1,34 +1,57 @@
-import type { Match } from '@/lib/types';
+// components/ScoreTile.tsx
+import Link from 'next/link';
+import type { Match, LeagueSlug } from '@/lib/types';
 
-export default function ScoreTile({ match }: { match: Match }) {
-  const kickoff =
-    match.status === 'NS'
-      ? new Date(match.date).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' })
-      : match.status;
+const LEAGUE_NAME: Record<LeagueSlug, string> = {
+  'premier-league': 'premier-league',
+  laliga: 'laliga',
+  bundesliga: 'bundesliga',
+  'serie-a': 'serie-a',
+  ucl: 'ucl',
+};
+
+export default function ScoreTile({
+  league,
+  matches,
+}: {
+  league: LeagueSlug;
+  matches: Match[];
+}) {
+  // ใช้แมตช์แรกของลีกนั้น ๆ (ถ้าไม่มีจะเป็น undefined)
+  const m = matches?.[0];
+
+  const kickoff = m
+    ? m.status === 'NS'
+      ? new Date(m.date).toLocaleString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      : m.status
+    : '-';
+
+  const scoreText =
+    m && m.status !== 'NS'
+      ? `${m.score?.home ?? 0} - ${m.score?.away ?? 0}`
+      : '-';
 
   return (
-    <div className="card p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs text-gray-500 dark:text-gray-400">{match.league}</span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">{kickoff}</span>
+    <div className="card p-4">
+      <div className="flex items-center justify-between text-xs uppercase tracking-wide text-gray-500">
+        <span>{LEAGUE_NAME[league]}</span>
+        <span>{kickoff}</span>
       </div>
 
-      <div className="space-y-2">
-        <Row team={match.home} score={match.score?.home} bold finished={match.status === 'FT'} />
-        <Row team={match.away} score={match.score?.away} finished={match.status === 'FT'} />
+      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-lg">
+        <div className="truncate">{m?.home ?? '-'}</div>
+        <div className="text-center font-semibold">{scoreText}</div>
+        <div className="truncate text-right">{m?.away ?? '-'}</div>
       </div>
-    </div>
-  );
-}
 
-function Row({
-  team, score, bold, finished,
-}: { team: string; score?: number; bold?: boolean; finished?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className={`truncate ${bold ? 'font-semibold' : ''}`}>{team}</div>
-      <div className={`w-6 text-right ${finished ? 'font-bold' : ''}`}>
-        {typeof score === 'number' ? score : '-'}
+      {m?.status && m.status !== 'NS' && (
+        <div className="mt-1 text-right text-xs text-gray-500">{m.status}</div>
+      )}
+
+      <div className="mt-3">
+        <Link href={`/leagues/${league}`} className="btn btn-outline w-full">
+          ดูทั้งหมด
+        </Link>
       </div>
     </div>
   );

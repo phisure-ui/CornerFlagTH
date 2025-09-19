@@ -4,14 +4,14 @@ import type { Config } from 'tailwindcss';
 export default {
   darkMode: 'class',
   content: [
-    './app/**/*.{ts,tsx,mdx}',
+    './app/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './lib/**/*.{ts,tsx}',
   ],
   theme: {
     extend: {
       colors: {
-        primary: '#ff6a00',
+        primary: '#ff6b00',
         ink: '#111111',
       },
       borderRadius: {
