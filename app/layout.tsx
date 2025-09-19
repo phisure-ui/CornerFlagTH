@@ -22,9 +22,15 @@ export const metadata: Metadata = {
   },
 
   other: {
+    // iOS Safari: ยังใช้
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
     'apple-mobile-web-app-title': 'CornerFlag',
+
+    // Chromium-based: ใส่เพิ่มเพื่อลด warning
+    'mobile-web-app-capable': 'yes',
+
+    // คุณใส่ไว้แล้ว ดีมาก
     'format-detection': 'telephone=no',
   },
 
