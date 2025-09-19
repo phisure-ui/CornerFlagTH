@@ -3,61 +3,55 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://cornerflagth.com'), // ระหว่าง dev จะไม่กระทบ
-  title: { default: 'CornerFlagTH', template: '%s | CornerFlagTH' },
-  description: 'ข่าวฟุตบอลอ่านสนุก • ไฮไลต์ • บทวิเคราะห์',
+  // ใช้สำหรับประกอบ URL ให้เป็น absolute (เปลี่ยนโดเมนตามจริงได้)
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+
+  title: {
+    default: 'CornerFlagTH',
+    template: '%s | CornerFlagTH',
+  },
+  description: 'ข่าวฟุตบอลอ่านสนุก • ไฮไลต์ • บทความ',
   applicationName: 'CornerFlagTH',
 
-  // ให้ Next แทรก <link rel="manifest" ...> อัตโนมัติด้วย
-  manifest: '/manifest.webmanifest',
-
+  // ไอคอน (รวม Apple icon)
   icons: {
     icon: [
-      { url: '/icons/icon-16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/icons/icon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      // favicon/png ทั่วไป (มี .ico ก็ได้ถ้ามี)
+      { url: '/icons/icon.png', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon.ico' },
     ],
-    apple: { url: '/icons/apple-icon.png', sizes: '180x180', type: 'image/png' },
-    shortcut: '/icons/icon-512.png',
+    shortcut: '/icons/icon.png',
+    apple: [
+      // สำหรับ iOS (180x180)
+      { url: '/icons/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 
-  other: {
-    // iOS Safari: ยังใช้
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'black-translucent',
-    'apple-mobile-web-app-title': 'CornerFlag',
-
-    // Chromium-based: ใส่เพิ่มเพื่อลด warning
-    'mobile-web-app-capable': 'yes',
-
-    // คุณใส่ไว้แล้ว ดีมาก
-    'format-detection': 'telephone=no',
-  },
-
+  // ตัวอย่าง OG/Twitter (ถ้ามี og-default.jpg)
   openGraph: {
     type: 'website',
-    locale: 'th_TH',
-    siteName: 'CornerFlagTH',
+    url: '/',
     title: 'CornerFlagTH',
-    description: 'ข่าวฟุตบอลอ่านสนุก • ไฮไลต์ • บทวิเคราะห์',
-    url: 'https://cornerflagth.com',
-    images: [{ url: '/icons/icon-512.png', width: 512, height: 512, alt: 'CornerFlagTH' }],
+    siteName: 'CornerFlagTH',
+    description: 'ข่าวฟุตบอลอ่านสนุก • ไฮไลต์ • บทความ',
+    images: [
+      { url: '/og-default.jpg', width: 1200, height: 630, alt: 'CornerFlagTH' },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'CornerFlagTH',
-    description: 'ข่าวฟุตบอลอ่านสนุก • ไฮไลต์ • บทวิเคราะห์',
-    images: ['/icons/icon-512.png'],
+    description: 'ข่าวฟุตบอลอ่านสนุก • ไฮไลต์ • บทความ',
+    images: ['/og-default.jpg'],
   },
 };
 
-// ⬇️ ย้าย themeColor มาไว้ที่นี่เพื่อลด warning
+// ย้าย themeColor มาไว้ที่ viewport (ตามคำเตือนของ Next 15)
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ff6b00' },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0b0b0b' },
   ],
 };
