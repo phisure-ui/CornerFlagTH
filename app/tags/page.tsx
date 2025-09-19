@@ -1,28 +1,23 @@
 // app/tags/page.tsx
-import Link from 'next/link';
-import { getAllTags } from '@/lib/adapters/articles';
+import { getArticles } from '@/lib/adapters/articles';
 
-export const revalidate = 300;
+export default async function TagsPage() {
+  const items = await getArticles({}); // ดึงทั้งหมดเพื่อรวบแท็ก
+  const counts = new Map<string, number>();
+  items.forEach((a) => a.tags?.forEach((t) => counts.set(t, (counts.get(t) ?? 0) + 1)));
 
-export default async function TagsIndexPage() {
-  const tags = await getAllTags();
+  const tags = [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-extrabold">แท็กทั้งหมด</h1>
-        <p className="text-sm text-gray-600 mt-1">{tags.length} แท็ก</p>
-      </header>
+    <div className="max-w-7xl mx-auto px-4">
+      <h1 className="text-3xl font-extrabold">แท็กทั้งหมด</h1>
+      <p className="text-sm text-gray-500 mt-1">{tags.length} แท็ก</p>
 
-      <div className="flex flex-wrap gap-2">
-        {tags.map((t) => (
-          <Link
-            key={t.tag}
-            href={`/tags/${t.tag}`}
-            className="px-3 py-1 rounded-full border hover:shadow-sm transition"
-          >
-            {t.tag} <span className="text-xs text-gray-500">({t.count})</span>
-          </Link>
+      <div className="mt-6 flex flex-wrap gap-3">
+        {tags.map(([t, n]) => (
+          <span key={t} className="chip">
+            {t} <span className="ml-1 text-gray-400">({n})</span>
+          </span>
         ))}
       </div>
     </div>

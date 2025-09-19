@@ -1,83 +1,134 @@
 // components/ShareBar.tsx
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Share2, Link2 } from "lucide-react";
 
-type Props = { title: string };
+type UTMKeys =
+  | "utm_source"
+  | "utm_medium"
+  | "utm_campaign"
+  | "utm_content"
+  | "utm_term";
 
-export default function ShareBar({ title }: Props) {
-  const [url, setUrl] = useState<string>('');
-  const [copied, setCopied] = useState(false);
+type Props = {
+  /** จะส่งมาก็ได้ ไม่ส่งมาก็จะใช้ URL ปัจจุบัน */
+  url?: string;
+  /** ใช้เป็น title ตอน share */
+  title: string;
+  className?: string;
+  /** override ค่า UTM ได้ */
+  utm?: Partial<Record<UTMKeys, string>>;
+};
 
+export default function ShareBar({ url, title, className = "", utm }: Props) {
+  // ป้องกัน hydration mismatch: เช็กได้หลัง mount เท่านั้น
+  const [canShare, setCanShare] = useState(false);
   useEffect(() => {
-    if (typeof window !== 'undefined') setUrl(window.location.href);
+    setCanShare(typeof navigator !== "undefined" && "share" in navigator);
   }, []);
 
-  async function copyLink() {
+  // หา base URL ที่ปลอดภัยตอน SSR
+  const baseUrl = useMemo(() => {
+    if (url) return url;
+    if (typeof window !== "undefined") return window.location.href;
+    return ""; // SSR-safe placeholder
+  }, [url]);
+
+  // สร้าง URL + ใส่ UTM
+  const buildUrl = useCallback(
+    (medium: "share_native" | "share_copy") => {
+      try {
+        const u = new URL(
+          baseUrl || "/",
+          typeof window !== "undefined"
+            ? window.location.origin
+            : "https://cornerflagth.com"
+        );
+
+        // ค่า default + override ได้ผ่าน props.utm
+        const params = new URLSearchParams({
+          utm_source: "cornerflagth",
+          utm_medium: medium,
+          utm_campaign: "article",
+          ...(utm || {}),
+        });
+
+        for (const [k, v] of params) {
+          if (!v) continue;
+          u.searchParams.set(k, v);
+        }
+        return u.toString();
+      } catch {
+        return baseUrl || "";
+      }
+    },
+    [baseUrl, utm]
+  );
+
+  // toast แบบเบา ๆ
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const id = setTimeout(() => setToast(null), 1800);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  const onShare = useCallback(async () => {
+    if (!canShare) return;
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      const shareUrl = buildUrl("share_native");
+      await (navigator as any).share({ title, url: shareUrl });
+      setToast("แชร์แล้ว");
+      // TODO: ส่ง analytics event ได้ที่นี่
     } catch {
-      alert('คัดลอกไม่สำเร็จ');
+      // user ยกเลิกหรือ platform ไม่ยอมแชร์ — ไม่ต้องทำอะไร
     }
-  }
+  }, [canShare, title, buildUrl]);
 
-  function openWin(href: string) {
-    window.open(href, '_blank', 'noopener,noreferrer,width=740,height=560');
-  }
+  const onCopy = useCallback(async () => {
+    const copyUrl = buildUrl("share_copy");
+    try {
+      await navigator.clipboard.writeText(copyUrl);
+      setToast("คัดลอกลิงก์แล้ว");
+      // TODO: ส่ง analytics event ได้ที่นี่
+    } catch {
+      setToast("คัดลอกไม่สำเร็จ");
+    }
+  }, [buildUrl]);
 
-  function shareX() {
-    if (!url) return;
-    const href =
-      'https://twitter.com/intent/tweet?text=' +
-      encodeURIComponent(title) +
-      '&url=' +
-      encodeURIComponent(url);
-    openWin(href);
-  }
-
-  function shareLINE() {
-    if (!url) return;
-    // รูปแบบแชร์ทางการของ LINE
-    const href =
-      'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(url);
-    openWin(href);
-  }
-
-  const disabled = !url;
+  const baseBtn =
+    "inline-flex items-center justify-center rounded-full px-4 py-2 border transition hover:shadow-sm active:scale-[.98] select-none";
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <button
-        type="button"
-        onClick={copyLink}
-        disabled={disabled}
-        aria-label="คัดลอกลิงก์บทความ"
-        className="px-3 py-1 rounded-full border hover:shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {copied ? 'คัดลอกแล้ว ✓' : 'คัดลอกลิงก์'}
-      </button>
+    <div className={`flex items-center gap-3 ${className}`}>
+      {canShare && (
+        <button
+          type="button"
+          onClick={onShare}
+          className={`${baseBtn} bg-[var(--brand-orange)] text-white border-transparent`}
+          aria-label="แชร์บทความนี้"
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          แชร์
+        </button>
+      )}
 
       <button
         type="button"
-        onClick={shareX}
-        disabled={disabled}
-        aria-label="แชร์ไปที่ X"
-        className="px-3 py-1 rounded-full border hover:shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={onCopy}
+        className={`${baseBtn} bg-white text-gray-700 border-gray-300 dark:bg-transparent dark:text-gray-200`}
+        aria-label="คัดลอกลิงก์"
       >
-        แชร์ไปที่ X
+        <Link2 className="mr-2 h-4 w-4" />
+        คัดลอกลิงก์
       </button>
 
-      <button
-        type="button"
-        onClick={shareLINE}
-        disabled={disabled}
-        aria-label="แชร์ไปที่ LINE"
-        className="px-3 py-1 rounded-full border hover:shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        แชร์ไปที่ LINE
-      </button>
+      {toast && (
+        <span className="ml-1 text-sm rounded-full px-3 py-1 bg-emerald-600 text-white/95">
+          {toast}
+        </span>
+      )}
     </div>
   );
 }

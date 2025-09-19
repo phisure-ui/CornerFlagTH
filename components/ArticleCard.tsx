@@ -1,45 +1,47 @@
-import Image from 'next/image';
+// components/ArticleCard.tsx
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Article } from '@/lib/types';
 
 export default function ArticleCard({ article }: { article: Article }) {
-  const published = new Date(article.publishedAt).toLocaleString('th-TH', {
+  const timeText = new Date(article.publishedAt).toLocaleString('th-TH', {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
 
+  const imgSrc = article.heroImage ?? '/og-default.jpg'; // fallback รูป
+
   return (
     <Link
       href={`/news/${article.slug}`}
-      className="group card overflow-hidden transition hover:shadow-sm"
+      className="block rounded-2xl border bg-white/70 dark:bg-white/5 hover:shadow-md transition-all duration-300 overflow-hidden"
     >
-      {article.heroImage && (
-        <div className="relative aspect-[16/9]">
-          <Image
-            src={article.heroImage}
-            alt={article.title}
-            fill
-            sizes="(max-width: 768px) 100vw, 600px"
-            className="object-cover transition group-hover:scale-[1.02]"
-          />
-        </div>
-      )}
+      <div className="relative aspect-[16/9]">
+        <Image
+          src={imgSrc}
+          alt={article.title}
+          fill
+          sizes="(min-width:1024px) 33vw, 100vw"
+          className="object-cover transition-transform duration-500 hover:scale-105"
+        />
+      </div>
 
       <div className="p-4">
-        <div className="mb-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          {article.league && <span className="chip chip-xs">{article.league}</span>}
-          <time dateTime={article.publishedAt}>{published}</time>
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          {article.league && (
+            <span className="px-2 py-0.5 rounded-full border text-gray-600 dark:text-gray-300">
+              {article.league}
+            </span>
+          )}
+          <time dateTime={article.publishedAt}>{timeText}</time>
         </div>
 
-        <h3 className="font-semibold leading-snug group-hover:text-primary">
-          {article.title}
-        </h3>
-
-        {article.excerpt && (
-          <p className="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
+        <h3 className="mt-2 font-bold text-lg line-clamp-2">{article.title}</h3>
+        {article.excerpt ? (
+          <p className="mt-1 text-gray-600 dark:text-gray-300 line-clamp-2">
             {article.excerpt}
           </p>
-        )}
+        ) : null}
       </div>
     </Link>
   );

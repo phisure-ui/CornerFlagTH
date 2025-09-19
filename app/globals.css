@@ -1,27 +1,20 @@
-/* ==== Tailwind v4 entry ==== */
-@import "tailwindcss";
-
-/* ===== CSS Variables (แบรนด์) ===== */
-:root {
-  --brand-orange: #ff6b00;
-  --brand-black: #0a0a0a;
-  --brand-white: #ffffff;
-}
+/* Tailwind v3 entry */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ===== Base + Dark mode ===== */
 @layer base {
-  :root { color-scheme: light; }
+  :root { color-scheme: light; --brand-orange: #ff6b00; }
   html.dark { color-scheme: dark; }
 
-  /* โทนสว่าง (เริ่มต้น) */
   body {
     @apply min-h-screen bg-gray-50 text-[#111] antialiased;
     /* fallback */
     background: #f6f7f9;
-    color: var(--brand-black);
+    color: #0a0a0a;
   }
 
-  /* โทนมืด */
   html.dark body {
     @apply bg-gray-950 text-gray-100;
     /* fallback */
@@ -37,9 +30,7 @@
   border-radius: .5rem; box-shadow: 0 2px 14px rgba(0,0,0,.18);
   z-index: 9999;
 }
-.skip-link:focus, .skip-link:focus-visible {
-  top: 1rem; outline: 2px solid #fff;
-}
+.skip-link:focus, .skip-link:focus-visible { top: 1rem; outline: 2px solid #fff; }
 html.dark .skip-link { background: #111; color: #fff; }
 
 /* ==== UI primitives: card / chip / button ==== */
