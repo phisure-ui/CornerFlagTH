@@ -3,10 +3,10 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    id: '/',                          // ป้องกันกรณีมีหลาย origin/เส้นทางแล้วซ้ำกัน
+    id: '/',
     name: 'CornerFlagTH',
     short_name: 'CornerFlag',
-    description: 'ข่าวฟุตบอลอ่านสนุก • ไฮไลต์ • บทความวิเคราะห์',
+    description: 'ข่าวฟุตบอลอ่านสนุก • ไฮไลต์ • บทความ',
     start_url: '/',
     scope: '/',
     display: 'standalone',
@@ -23,4 +23,3 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
   };
 }
-

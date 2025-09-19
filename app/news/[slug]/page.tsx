@@ -1,199 +1,164 @@
 // app/news/[slug]/page.tsx
-import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+
 import ShareBar from "@/components/ShareBar";
-import JsonLd from "@/components/JsonLd";
+// ปรับ path ให้ตรงกับโปรเจกต์คุณ
+import { getArticleBySlug } from "@/lib/articles";
 
-/* ---------- Types ---------- */
-type Article = {
-  slug: string;
-  title: string;
-  excerpt: string;
-  content?: string;
-  league?: string;
-  publishedAt: string; // ISO
-  updatedAt?: string;
-  heroImage?: string;
-};
+// ---- ช่วยทำให้ URL เป็น absolute เสมอ ----
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const abs = (p: string) => (p.startsWith("http") ? p : `${SITE_URL}${p}`);
 
-/* ---------- Helpers ---------- */
-function getOrigin() {
-  const h = headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto =
-    h.get("x-forwarded-proto") ?? (host?.includes("localhost") ? "http" : "https");
-  return host ? `${proto}://${host}` : "https://cornerflagth.com";
-}
+type PageProps = { params: { slug: string } };
 
-function prettyFromSlug(slug: string) {
-  return slug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
-}
+// ใช้ revalidate ได้ตามต้องการ (เอาออกได้)
+export const revalidate = 60;
 
-async function getArticle(slug: string): Promise<Article | null> {
-  const origin = getOrigin();
-  try {
-    const res = await fetch(`${origin}/api/articles`, { next: { revalidate: 60 } });
-    const data = await res.json();
-    const list = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
-    const raw = list.find((a: any) => a.slug === slug);
-    if (!raw) return null;
-
-    return {
-      slug: raw.slug,
-      title: raw.title,
-      excerpt: raw.excerpt ?? "",
-      content: raw.content ?? "",
-      league: raw.league,
-      publishedAt: raw.publishedAt ?? raw.date ?? new Date().toISOString(),
-      updatedAt: raw.updatedAt,
-      heroImage: raw.heroImage ?? raw.image,
-    };
-  } catch {
-    return null;
-  }
-}
-
-/* ---------- Metadata ---------- */
+// ----- สร้าง Metadata ของหน้านี้ -----
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: PageProps
 ): Promise<Metadata> {
-  const origin = getOrigin();
-  const article = await getArticle(params.slug);
+  const article = await getArticleBySlug(params.slug);
+  if (!article) return {};
 
-  const title = article
-    ? `${article.title} | CornerFlagTH`
-    : `${prettyFromSlug(params.slug)} | CornerFlagTH`;
-
-  const description =
-    article?.excerpt ?? "ข่าวบอล รายงานผล และบทความวิเคราะห์จาก CornerFlagTH";
-
-  const pageUrl = `${origin}/news/${params.slug}`;
-  const ogImg = article?.heroImage
-    ? article.heroImage.startsWith("http")
-      ? article.heroImage
-      : `${origin}${article.heroImage}`
-    : `${origin}/og-default.jpg`;
+  const canonical = `${SITE_URL}/news/${article.slug}`;
+  const hero = article.heroImage ?? "/og-default.jpg";
+  const title = article.title;
+  const description = article.excerpt ?? "";
 
   return {
     title,
     description,
-    alternates: { canonical: pageUrl },
+    alternates: { canonical },
     openGraph: {
       type: "article",
-      url: pageUrl,
-      siteName: "CornerFlagTH",
-      locale: "th_TH",
+      url: canonical,
       title,
       description,
-      images: [
-        { url: ogImg, width: 1200, height: 630, alt: article?.title ?? "CornerFlagTH" },
-      ],
+      images: [{ url: abs(hero) }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [ogImg],
+      images: [abs(hero)],
     },
   };
 }
 
-/* ---------- Page ---------- */
-export default async function ArticlePage({
-  params,
-}: { params: { slug: string } }) {
-  const origin = getOrigin();
-  const article = await getArticle(params.slug);
+// ----- หน้า Article -----
+export default async function ArticlePage({ params }: PageProps) {
+  const article = await getArticleBySlug(params.slug);
+  if (!article) return notFound();
 
-  if (!article) {
-    return (
-      <main className="container mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold">ไม่พบบทความ</h1>
-        <p className="mt-4">
-          <Link href="/news" className="underline text-blue-600">ดูข่าวทั้งหมด</Link>
-        </p>
-      </main>
-    );
-  }
+  const canonical = `${SITE_URL}/news/${article.slug}`;
+  const hero = article.heroImage ?? "/og-default.jpg";
 
-  const imgSrc = article.heroImage
-    ? article.heroImage.startsWith("http")
-      ? article.heroImage
-      : `${origin}${article.heroImage}`
-    : `${origin}/og-default.jpg`;
+  const publishedISO = new Date(article.publishedAt).toISOString();
+  const modifiedISO = new Date(article.updatedAt ?? article.publishedAt).toISOString();
 
-  const canonical = `${origin}/news/${article.slug}`;
-
-  /* ----- JSON-LD objects ----- */
-  const jsonLdArticle = {
+  // ---------- JSON-LD: NewsArticle ----------
+  const articleLd = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
     headline: article.title,
     description: article.excerpt,
-    datePublished: article.publishedAt,
-    dateModified: article.updatedAt ?? article.publishedAt,
-    mainEntityOfPage: canonical,
-    image: [imgSrc],
-    author: [{ "@type": "Organization", name: "CornerFlagTH" }],
+    datePublished: publishedISO,
+    dateModified: modifiedISO,
+    inLanguage: "th-TH",
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+    image: [abs(hero)],
+    author: [
+      { "@type": "Person", name: article.author ?? "CornerFlagTH Desk" },
+    ],
     publisher: {
       "@type": "Organization",
       name: "CornerFlagTH",
-      logo: { "@type": "ImageObject", url: `${origin}/logo-512.png`, width: 512, height: 512 },
+      logo: { "@type": "ImageObject", url: abs("/icons/icon.png") }, // 512x512
     },
+    articleSection: article.league ?? "football",
+    url: canonical,
   };
 
-  const jsonLdBreadcrumb = {
+  // ---------- JSON-LD: Breadcrumb ----------
+  const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${origin}/` },
-      { "@type": "ListItem", position: 2, name: "News", item: `${origin}/news` },
+      { "@type": "ListItem", position: 1, name: "หน้าหลัก", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "ข่าว", item: `${SITE_URL}/news` },
       { "@type": "ListItem", position: 3, name: article.title, item: canonical },
     ],
   };
 
+  // แปลงเวลาโชว์
+  const timeText = new Date(article.publishedAt).toLocaleString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
-    <main className="pb-10">
-      {/* Breadcrumb */}
-      <nav className="container mx-auto px-4 pt-6 text-sm text-gray-500">
-        <ol className="flex items-center gap-2">
-          <li><Link href="/" className="hover:underline">Home</Link></li>
-          <li>/</li>
-          <li><Link href="/news" className="hover:underline">News</Link></li>
-          <li>/</li>
-          <li className="font-medium text-gray-700 dark:text-gray-200">{article.title}</li>
-        </ol>
-      </nav>
+    <main className="container mx-auto px-4">
+      {/* Header */}
+      <header className="max-w-4xl mx-auto pt-6">
+        <nav className="text-sm text-gray-600 dark:text-gray-300">
+          <a href="/" className="hover:underline">Home</a>
+          <span className="mx-2">/</span>
+          <a href="/news" className="hover:underline">News</a>
+          <span className="mx-2">/</span>
+          <span aria-current="page" className="font-medium">{article.title}</span>
+        </nav>
 
-      <article className="container mx-auto px-4 py-4">
-        <header className="mb-4">
-          <h1 className="text-3xl font-extrabold tracking-tight">{article.title}</h1>
-          <div className="mt-2 text-sm text-gray-500">
-            {new Date(article.publishedAt).toLocaleString("th-TH", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
-          </div>
-        </header>
+        <h1 className="mt-3 text-3xl sm:text-4xl font-extrabold tracking-tight">
+          {article.title}
+        </h1>
 
-        <figure className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl">
-          <Image src={imgSrc} alt={article.title} fill sizes="100vw" className="object-cover" priority />
-        </figure>
-
-        <div className="prose lg:prose-lg dark:prose-invert mt-8">
-          <p>{article.excerpt}</p>
+        <div className="mt-2 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+          {article.league && (
+            <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs">
+              {article.league}
+            </span>
+          )}
+          <time dateTime={article.publishedAt}>{timeText}</time>
         </div>
+      </header>
 
-        <div className="mt-6">
-          <ShareBar url={canonical} title={article.title} />
-        </div>
+      {/* Hero image */}
+      <figure className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl max-w-4xl mx-auto">
+        <Image
+          src={hero}
+          alt={article.title}
+          fill
+          sizes="100vw"
+          className="object-cover"
+          priority
+        />
+      </figure>
+
+      {/* เนื้อหา / excerpt (ใส่ content จริงของคุณแทนได้) */}
+      <article className="prose lg:prose-lg dark:prose-invert mt-8 max-w-3xl mx-auto">
+        {article.excerpt && <p>{article.excerpt}</p>}
+        {/* TODO: แสดงเนื้อหาเต็มถ้าคุณมี field content (HTML/MDX) */}
       </article>
 
-      {/* JSON-LD scripts */}
-      <JsonLd data={jsonLdArticle} />
-      <JsonLd data={jsonLdBreadcrumb} />
+      {/* แถบแชร์ */}
+      <div className="max-w-3xl mx-auto mt-8">
+        <ShareBar url={canonical} title={article.title} />
+      </div>
+
+      {/* ---------- ฝัง JSON-LD (สั่งให้ไม่เตือน hydration) ---------- */}
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
+      />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
     </main>
   );
 }
